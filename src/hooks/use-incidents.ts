@@ -16,46 +16,56 @@ export function useIncidents(filters?: IncidentFilters) {
   const [data, setData] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const loadingRef = useRef(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const filtersRef = useRef(filters);
+  const fetchCountRef = useRef(0);
 
-  const fetchIncidents = useCallback(async () => {
-    setLoading(true);
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+
+  const fetchIncidents = useCallback(async (showLoading = true) => {
+    if (loadingRef.current && showLoading) return;
+    loadingRef.current = true;
+    if (showLoading) setLoading(true);
     setError(null);
+
     const supabase = createClient();
+    const f = filtersRef.current;
+    const myFetch = ++fetchCountRef.current;
 
     let query = supabase
       .from("incidents")
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (filters?.category) {
-      query = query.eq("category", filters.category);
-    }
-    if (filters?.status) {
-      query = query.eq("status", filters.status);
-    }
-    if (filters?.from) {
-      query = query.gte("created_at", filters.from);
-    }
-    if (filters?.to) {
-      query = query.lte("created_at", filters.to);
-    }
+    if (f?.category) query = query.eq("category", f.category);
+    if (f?.status) query = query.eq("status", f.status);
+    if (f?.from) query = query.gte("created_at", f.from);
+    if (f?.to) query = query.lte("created_at", f.to);
 
     const { data: incidents, error: fetchError } = await query;
+
+    // Stale check — skip if a newer fetch was started
+    if (myFetch < fetchCountRef.current) {
+      loadingRef.current = false;
+      return;
+    }
 
     if (fetchError) {
       setError(fetchError.message);
     } else {
       setData(incidents || []);
     }
-    setLoading(false);
-  }, [filters?.category, filters?.status, filters?.from, filters?.to]);
+    if (showLoading) setLoading(false);
+    loadingRef.current = false;
+  }, []);
 
   useEffect(() => {
-    fetchIncidents();
-  }, [fetchIncidents]);
+    fetchIncidents(true);
+  }, [fetchIncidents, filters?.category, filters?.status, filters?.from, filters?.to]);
 
-  // Realtime subscription with debounce
   useEffect(() => {
     const supabase = createClient();
 
@@ -66,7 +76,7 @@ export function useIncidents(filters?: IncidentFilters) {
         { event: "*", schema: "public", table: "incidents" },
         () => {
           if (debounceRef.current) clearTimeout(debounceRef.current);
-          debounceRef.current = setTimeout(() => fetchIncidents(), 500);
+          debounceRef.current = setTimeout(() => fetchIncidents(false), 1000);
         }
       )
       .subscribe();
@@ -77,7 +87,12 @@ export function useIncidents(filters?: IncidentFilters) {
     };
   }, [fetchIncidents]);
 
-  return { data, loading, error, refetch: fetchIncidents };
+  // Stable refetch using ref — won't change between renders
+  const stableRefetch = useCallback(() => {
+    fetchIncidents(true);
+  }, [fetchIncidents]);
+
+  return { data, loading, error, refetch: stableRefetch };
 }
 
 export async function updateIncidentStatus(

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, memo, useRef } from "react";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import type { LatLngExpression } from "leaflet";
 import L from "leaflet";
@@ -42,12 +42,14 @@ const STATUS_BUTTON_LABELS: Record<StatusValue, string> = {
 
 function FlyToTarget({ highlightId, incidents }: { highlightId: string; incidents: Incident[] }) {
   const map = useMap();
+  const prevRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!highlightId) return;
-    const incident = incidents.find((i) => i.id === highlightId);
-    if (!incident) return;
-    map.flyTo([incident.latitude, incident.longitude], 16, { animate: true });
+    if (!highlightId || highlightId === prevRef.current) return;
+    prevRef.current = highlightId;
+    const target = incidents.find((i) => i.id === highlightId);
+    if (!target) return;
+    map.flyTo([target.latitude, target.longitude], 16, { animate: true });
   }, [highlightId, incidents, map]);
 
   return null;
@@ -67,7 +69,6 @@ function IncidentPopup({
 
   return (
     <div style={{ minWidth: 220, maxWidth: 280, fontFamily: "system-ui, sans-serif" }}>
-      {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
         <span style={{ fontSize: 20 }}>{category?.emoji}</span>
         <div>
@@ -81,7 +82,6 @@ function IncidentPopup({
         </div>
       </div>
 
-      {/* Photo */}
       {incident.photo_url && (
         <img
           src={incident.photo_url}
@@ -90,12 +90,10 @@ function IncidentPopup({
         />
       )}
 
-      {/* Description */}
       <p style={{ fontSize: 13, color: "#374151", marginBottom: 6, lineHeight: 1.4 }}>
         {incident.description}
       </p>
 
-      {/* Reporter info */}
       {(incident.reporter_name || incident.reporter_note) && (
         <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 8, padding: "6px 8px", background: "#f9fafb", borderRadius: 4 }}>
           {incident.reporter_name && (
@@ -107,12 +105,10 @@ function IncidentPopup({
         </div>
       )}
 
-      {/* Coordinates */}
       <div style={{ fontSize: 10, color: "#9ca3af", marginBottom: 8 }}>
         📍 {incident.latitude.toFixed(6)}, {incident.longitude.toFixed(6)}
       </div>
 
-      {/* Status badge + toggle */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid #e5e7eb", paddingTop: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ fontSize: 11, color: "#6b7280" }}>Status:</span>
@@ -155,6 +151,30 @@ function IncidentPopup({
   );
 }
 
+const MapMarkers = memo(function MapMarkers({
+  incidents,
+  onStatusChange,
+}: {
+  incidents: Incident[];
+  onStatusChange?: (id: string, status: StatusValue) => void;
+}) {
+  return (
+    <MarkerClusterGroup chunkedLoading>
+      {incidents.map((incident) => (
+        <Marker
+          key={incident.id}
+          position={[incident.latitude, incident.longitude]}
+          icon={ICONS[incident.category]}
+        >
+          <Popup maxWidth={300}>
+            <IncidentPopup incident={incident} onStatusChange={onStatusChange} />
+          </Popup>
+        </Marker>
+      ))}
+    </MarkerClusterGroup>
+  );
+});
+
 export default function IncidentMap({
   incidents = [],
   center = [-2.5, 18],
@@ -163,6 +183,14 @@ export default function IncidentMap({
   highlightId,
   onStatusChange,
 }: IncidentMapProps) {
+  const handlerRef = useRef(onStatusChange);
+  handlerRef.current = onStatusChange;
+
+  const stableStatusChange = useCallback(
+    (id: string, status: StatusValue) => handlerRef.current?.(id, status),
+    []
+  );
+
   return (
     <MapContainer center={center} zoom={zoom} className={className} scrollWheelZoom>
       <TileLayer
@@ -170,19 +198,7 @@ export default function IncidentMap({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       {highlightId && <FlyToTarget highlightId={highlightId} incidents={incidents} />}
-      <MarkerClusterGroup chunkedLoading>
-        {incidents.map((incident) => (
-          <Marker
-            key={incident.id}
-            position={[incident.latitude, incident.longitude]}
-            icon={ICONS[incident.category]}
-          >
-            <Popup maxWidth={300}>
-              <IncidentPopup incident={incident} onStatusChange={onStatusChange} />
-            </Popup>
-          </Marker>
-        ))}
-      </MarkerClusterGroup>
+      <MapMarkers incidents={incidents} onStatusChange={stableStatusChange} />
     </MapContainer>
   );
 }

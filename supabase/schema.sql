@@ -1,6 +1,6 @@
 -- ============================================
 -- Cane Guard Database Schema
--- Run in Supabase SQL Editor
+-- Run entire file in Supabase SQL Editor
 -- ============================================
 
 -- Enums
@@ -12,7 +12,9 @@ CREATE TYPE incident_status AS ENUM (
   'OPEN', 'ON_PROGRESS', 'CLOSED'
 );
 
+-- ============================================
 -- Incidents table
+-- ============================================
 CREATE TABLE incidents (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   category incident_category NOT NULL,
@@ -82,26 +84,33 @@ CREATE POLICY "Authenticated can delete incidents"
   USING (true);
 
 -- ============================================
--- Storage Bucket Setup
--- Run after creating bucket via Supabase Dashboard
+-- Storage Bucket: incident-reports
+-- Creates a public bucket for incident photos
 -- ============================================
--- 1. Create bucket "incident-reports" (public) via Dashboard > Storage
--- 2. Then run these policies in SQL Editor
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('incident-reports', 'incident-reports', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
 
--- Storage policies
-CREATE POLICY "Public can view incident photos"
+-- ============================================
+-- Storage RLS Policies
+-- ============================================
+
+-- Public: anyone can view incident photos
+CREATE POLICY "Public read incident photos"
   ON storage.objects
   FOR SELECT
   TO public
   USING (bucket_id = 'incident-reports');
 
-CREATE POLICY "Anyone can upload incident photos"
+-- Public: anyone can upload incident photos (for anonymous reporting)
+CREATE POLICY "Public insert incident photos"
   ON storage.objects
   FOR INSERT
   TO public
   WITH CHECK (bucket_id = 'incident-reports');
 
-CREATE POLICY "Authenticated can delete incident photos"
+-- Authenticated: can delete incident photos (admin cleanup)
+CREATE POLICY "Authenticated delete incident photos"
   ON storage.objects
   FOR DELETE
   TO authenticated

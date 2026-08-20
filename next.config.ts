@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Disable SVG optimization for Leaflet marker icons
+  images: {
+    unoptimized: true,
+  },
 };
 
 export default nextConfig;

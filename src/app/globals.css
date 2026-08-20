@@ -117,6 +117,15 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* Leaflet popup reset */
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+}
+.leaflet-popup-content {
+  margin: 12px 16px;
+  line-height: 1.5;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

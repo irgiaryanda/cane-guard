@@ -68,11 +68,11 @@ CREATE POLICY "Public can read incidents"
   TO public
   USING (true);
 
--- Authenticated: can update status
-CREATE POLICY "Authenticated can update incidents"
+-- Public: can update status (demo mode)
+CREATE POLICY "Public can update incidents"
   ON incidents
   FOR UPDATE
-  TO authenticated
+  TO public
   USING (true)
   WITH CHECK (true);
 

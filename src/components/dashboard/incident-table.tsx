@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Eye, MapPin, ArrowRight } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MapPin } from "lucide-react";
 import StatusBadge from "./status-badge";
 import type { Incident } from "@/lib/types";
 import { CATEGORIES, STATUSES, type StatusValue } from "@/lib/constants";
@@ -16,24 +18,17 @@ interface IncidentTableProps {
 
 export default function IncidentTable({ incidents, onStatusChange }: IncidentTableProps) {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const router = useRouter();
 
   async function handleStatusChange(id: string, newStatus: StatusValue) {
     setUpdatingId(id);
-    await updateIncidentStatus(id, newStatus);
-    onStatusChange?.();
+    const { error } = await updateIncidentStatus(id, newStatus);
+    if (!error) onStatusChange?.();
     setUpdatingId(null);
   }
 
-  function nextStatus(current: StatusValue): StatusValue | null {
-    if (current === "OPEN") return "ON_PROGRESS";
-    if (current === "ON_PROGRESS") return "CLOSED";
-    return null;
-  }
-
-  function nextStatusLabel(current: StatusValue): string {
-    const next = nextStatus(current);
-    if (!next) return "";
-    return STATUSES.find((s) => s.value === next)?.label ?? "";
+  function goToMap(incident: Incident) {
+    router.push(`/dashboard/map?id=${incident.id}&lat=${incident.latitude}&lng=${incident.longitude}`);
   }
 
   return (
@@ -51,35 +46,41 @@ export default function IncidentTable({ incidents, onStatusChange }: IncidentTab
         <TableBody>
           {incidents.map((incident) => {
             const category = CATEGORIES.find((c) => c.value === incident.category);
-            const next = nextStatus(incident.status);
             return (
               <TableRow key={incident.id}>
                 <TableCell className="whitespace-nowrap">
                   {category?.emoji} {category?.label}
                 </TableCell>
                 <TableCell className="max-w-[200px] truncate">{incident.description}</TableCell>
-                <TableCell><StatusBadge status={incident.status} /></TableCell>
+                <TableCell>
+                  <Select
+                    value={incident.status}
+                    disabled={updatingId === incident.id}
+                    onValueChange={(val) => handleStatusChange(incident.id, val as StatusValue)}
+                  >
+                    <SelectTrigger className="h-8 w-[140px] text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STATUSES.map((s) => (
+                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </TableCell>
                 <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
                   {new Date(incident.created_at).toLocaleDateString("id-ID")}
                 </TableCell>
                 <TableCell>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" title="Lihat koordinat">
-                      <MapPin className="h-3.5 w-3.5" />
-                    </Button>
-                    {next && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 gap-1 text-xs"
-                        disabled={updatingId === incident.id}
-                        onClick={() => handleStatusChange(incident.id, next)}
-                      >
-                        {nextStatusLabel(incident.status)}
-                        <ArrowRight className="h-3 w-3" />
-                      </Button>
-                    )}
-                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    title="Lihat di peta"
+                    onClick={() => goToMap(incident)}
+                  >
+                    <MapPin className="h-3.5 w-3.5" />
+                  </Button>
                 </TableCell>
               </TableRow>
             );

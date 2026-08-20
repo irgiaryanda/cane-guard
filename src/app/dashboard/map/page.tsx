@@ -1,21 +1,73 @@
 "use client";
 
-import { useIncidents } from "@/hooks/use-incidents";
+import { Suspense, useCallback, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useIncidents, updateIncidentStatus } from "@/hooks/use-incidents";
 import IncidentMap from "@/components/maps/dynamic-map";
+import GisSearch, { filterIncidentsByRadius, type GisFilters } from "@/components/maps/gis-search";
+import type { StatusValue } from "@/lib/constants";
 
-export default function DashboardMapPage() {
-  const { data: incidents, loading } = useIncidents();
+function MapContent() {
+  const searchParams = useSearchParams();
+  const highlightId = searchParams.get("id") ?? undefined;
+  const lat = searchParams.get("lat");
+  const lng = searchParams.get("lng");
+
+  const { data: allIncidents, loading, refetch } = useIncidents();
+  const [gisFilters, setGisFilters] = useState<GisFilters>({
+    latitude: lat ?? "",
+    longitude: lng ?? "",
+    radius: "10",
+    category: "all",
+    status: "all",
+  });
+
+  const filteredIncidents = useMemo(
+    () => filterIncidentsByRadius(allIncidents, gisFilters),
+    [allIncidents, gisFilters]
+  );
+
+  const handleStatusChange = useCallback(async (id: string, status: StatusValue) => {
+    await updateIncidentStatus(id, status);
+    refetch();
+  }, [refetch]);
+
+  const center = lat && lng ? [parseFloat(lat), parseFloat(lng)] as [number, number] : undefined;
 
   return (
     <div className="container mx-auto px-4 py-6">
       <h1 className="mb-4 text-2xl font-bold">Peta Insiden</h1>
+
+      <GisSearch onFilterChange={setGisFilters} totalResults={filteredIncidents.length} />
+
       {loading ? (
         <div className="flex h-[600px] items-center justify-center rounded-lg bg-muted">
           <p className="text-sm text-muted-foreground">Memuat data insiden...</p>
         </div>
       ) : (
-        <IncidentMap incidents={incidents} className="h-[600px] w-full rounded-lg" />
+        <IncidentMap
+          incidents={filteredIncidents}
+          center={center}
+          highlightId={highlightId}
+          onStatusChange={handleStatusChange}
+          className="h-[600px] w-full rounded-lg"
+        />
       )}
     </div>
+  );
+}
+
+export default function DashboardMapPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto px-4 py-6">
+        <h1 className="mb-4 text-2xl font-bold">Peta Insiden</h1>
+        <div className="flex h-[600px] items-center justify-center rounded-lg bg-muted">
+          <p className="text-sm text-muted-foreground">Memuat peta...</p>
+        </div>
+      </div>
+    }>
+      <MapContent />
+    </Suspense>
   );
 }

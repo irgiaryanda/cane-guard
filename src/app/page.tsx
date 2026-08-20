@@ -3,13 +3,11 @@ import IncidentForm from "@/components/reports/incident-form";
 
 export default function HomePage() {
   return (
-    <>
+    <div className="min-h-screen bg-muted/30">
       <Header />
-      <main className="flex-1 bg-muted/30">
-        <div className="container mx-auto max-w-lg px-4 py-6">
-          <IncidentForm />
-        </div>
+      <main className="container mx-auto px-4 py-6">
+        <IncidentForm />
       </main>
-    </>
+    </div>
   );
 }

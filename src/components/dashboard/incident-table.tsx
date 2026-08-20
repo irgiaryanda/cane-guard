@@ -6,7 +6,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin } from "lucide-react";
-import StatusBadge from "./status-badge";
 import type { Incident } from "@/lib/types";
 import { CATEGORIES, STATUSES, type StatusValue } from "@/lib/constants";
 import { updateIncidentStatus } from "@/hooks/use-incidents";
@@ -29,6 +28,10 @@ export default function IncidentTable({ incidents, onStatusChange }: IncidentTab
 
   function goToMap(incident: Incident) {
     router.push(`/dashboard/map?id=${incident.id}&lat=${incident.latitude}&lng=${incident.longitude}`);
+  }
+
+  function statusLabel(status: StatusValue): string {
+    return STATUSES.find((s) => s.value === status)?.label ?? status;
   }
 
   return (
@@ -58,8 +61,18 @@ export default function IncidentTable({ incidents, onStatusChange }: IncidentTab
                     disabled={updatingId === incident.id}
                     onValueChange={(val) => handleStatusChange(incident.id, val as StatusValue)}
                   >
-                    <SelectTrigger className="h-8 w-[140px] text-xs">
-                      <SelectValue />
+                    <SelectTrigger className="h-8 w-[150px] text-xs">
+                      <span className="flex items-center gap-1.5">
+                        <span
+                          className="inline-block h-2 w-2 rounded-full"
+                          style={{
+                            backgroundColor:
+                              incident.status === "OPEN" ? "#ef4444" :
+                              incident.status === "ON_PROGRESS" ? "#f59e0b" : "#22c55e",
+                          }}
+                        />
+                        {statusLabel(incident.status)}
+                      </span>
                     </SelectTrigger>
                     <SelectContent>
                       {STATUSES.map((s) => (

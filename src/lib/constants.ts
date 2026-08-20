@@ -10,8 +10,8 @@ export type CategoryValue = (typeof CATEGORIES)[number]["value"];
 
 export const STATUSES = [
   { value: "OPEN", label: "Terbuka", color: "bg-red-500" },
-  { value: "ON_PROGRESS", label: "Dalam Proses", color: "bg-amber-500" },
-  { value: "CLOSED", label: "Selesai", color: "bg-green-500" },
+  { value: "ON_PROGRESS", label: "Sedang Diproses", color: "bg-amber-500" },
+  { value: "CLOSED", label: "Selesai", color: "bg-emerald-500" },
 ] as const;
 
 export type StatusValue = (typeof STATUSES)[number]["value"];

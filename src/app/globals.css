@@ -120,17 +120,28 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
-/* Leaflet protection - prevent Tailwind reset from breaking map */
+/* Leaflet Tailwind CSS reset protection */
 .leaflet-container,
-.leaflet-marker-icon,
-.leaflet-popup,
 .leaflet-pane,
-.leaflet-pane > * {
-  border: initial !important;
-  outline: initial !important;
+.leaflet-pane *,
+.leaflet-marker-icon,
+.leaflet-control,
+.leaflet-popup,
+.leaflet-tile {
+  border: none !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font: inherit !important;
+  color: inherit !important;
+  background: none !important;
 }
 
-/* Leaflet popup reset */
+.leaflet-container {
+  border-radius: 8px;
+}
+
 .leaflet-popup-content-wrapper {
   border-radius: 8px;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Incident } from "@/lib/types";
 import type { CategoryValue, StatusValue } from "@/lib/constants";
@@ -16,6 +16,7 @@ export function useIncidents(filters?: IncidentFilters) {
   const [data, setData] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchIncidents = useCallback(async () => {
     setLoading(true);
@@ -54,7 +55,7 @@ export function useIncidents(filters?: IncidentFilters) {
     fetchIncidents();
   }, [fetchIncidents]);
 
-  // Realtime subscription
+  // Realtime subscription with debounce
   useEffect(() => {
     const supabase = createClient();
 
@@ -64,12 +65,14 @@ export function useIncidents(filters?: IncidentFilters) {
         "postgres_changes",
         { event: "*", schema: "public", table: "incidents" },
         () => {
-          fetchIncidents();
+          if (debounceRef.current) clearTimeout(debounceRef.current);
+          debounceRef.current = setTimeout(() => fetchIncidents(), 500);
         }
       )
       .subscribe();
 
     return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
       supabase.removeChannel(channel);
     };
   }, [fetchIncidents]);

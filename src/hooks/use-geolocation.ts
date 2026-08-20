@@ -21,35 +21,55 @@ export function useGeolocation() {
 
   const fetchLocation = useCallback(() => {
     if (!navigator.geolocation) {
-      setState((s) => ({ ...s, error: "Geolocation tidak didukung" }));
+      setState((current) => ({
+        ...current,
+        loading: false,
+        error: "Geolocation tidak didukung oleh browser ini",
+      }));
       return;
     }
 
-    setState((s) => ({ ...s, loading: true, error: null }));
+    setState((current) => ({ ...current, loading: true, error: null }));
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setState({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-          loading: false,
-          error: null,
-        });
-      },
-      (err) => {
-        let msg = "Gagal mengambil lokasi";
-        if (err.code === 1) msg = "Izin lokasi ditolak";
-        else if (err.code === 2) msg = "Lokasi tidak tersedia";
-        else if (err.code === 3) msg = "Permintaan lokasi habis waktu";
-        setState((s) => ({ ...s, loading: false, error: msg }));
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-    );
+    const success = (position: GeolocationPosition) => {
+      setState({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+        loading: false,
+        error: null,
+      });
+    };
+
+    const fallback = () => {
+      navigator.geolocation.getCurrentPosition(
+        success,
+        (error) => {
+          let message = "Gagal mengambil lokasi";
+          if (error.code === 1) message = "Izin lokasi ditolak";
+          if (error.code === 2) message = "Lokasi tidak tersedia";
+          if (error.code === 3) message = "Lokasi tidak ditemukan. Pastikan GPS aktif lalu coba lagi.";
+          setState((current) => ({ ...current, loading: false, error: message }));
+        },
+        { enableHighAccuracy: false, timeout: 20000, maximumAge: 300000 }
+      );
+    };
+
+    navigator.geolocation.getCurrentPosition(success, fallback, {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0,
+    });
   }, []);
 
-  const setPosition = useCallback((lat: number, lng: number) => {
-    setState((s) => ({ ...s, latitude: lat, longitude: lng, error: null }));
+  const setPosition = useCallback((latitude: number, longitude: number) => {
+    setState((current) => ({
+      ...current,
+      latitude,
+      longitude,
+      accuracy: null,
+      error: null,
+    }));
   }, []);
 
   return { ...state, fetchLocation, setPosition };

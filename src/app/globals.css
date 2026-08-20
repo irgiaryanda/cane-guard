@@ -1,9 +1,9 @@
 @import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
 @import "leaflet/dist/leaflet.css";
 @import "leaflet.markercluster/dist/MarkerCluster.css";
 @import "leaflet.markercluster/dist/MarkerCluster.Default.css";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -118,6 +118,16 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+}
+
+/* Leaflet protection - prevent Tailwind reset from breaking map */
+.leaflet-container,
+.leaflet-marker-icon,
+.leaflet-popup,
+.leaflet-pane,
+.leaflet-pane > * {
+  border: initial !important;
+  outline: initial !important;
 }
 
 /* Leaflet popup reset */

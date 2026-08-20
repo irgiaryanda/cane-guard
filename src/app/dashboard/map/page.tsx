@@ -17,11 +17,7 @@ function MapContent() {
 
   const { data: allIncidents, loading, refetch } = useIncidents();
   const [gisFilters, setGisFilters] = useState<GisFilters>({
-    latitude: lat ?? "",
-    longitude: lng ?? "",
-    radius: "10",
-    category: "all",
-    status: "all",
+    latitude: lat ?? "", longitude: lng ?? "", radius: "10", category: "all", status: "all",
   });
 
   const filteredIncidents = useMemo(
@@ -37,23 +33,16 @@ function MapContent() {
   const center = lat && lng ? [parseFloat(lat), parseFloat(lng)] as [number, number] : undefined;
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="mb-4 flex items-center gap-3">
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Kembali ke Dashboard
-        </Link>
-      </div>
-      <h1 className="mb-4 text-2xl font-bold">Peta Insiden</h1>
-
+    <div className="px-4 py-6 lg:px-6">
+      <Link href="/dashboard" className="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-300 transition-colors mb-4">
+        <ChevronLeft className="h-4 w-4" />
+        Kembali ke Dashboard
+      </Link>
+      <h1 className="mb-4 text-2xl font-bold text-white">Peta Insiden</h1>
       <GisSearch onFilterChange={setGisFilters} totalResults={filteredIncidents.length} />
-
       {loading ? (
-        <div className="flex h-[600px] items-center justify-center rounded-lg bg-muted">
-          <p className="text-sm text-muted-foreground">Memuat data insiden...</p>
+        <div className="flex h-[600px] items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/60">
+          <p className="text-sm text-zinc-500">Memuat data insiden...</p>
         </div>
       ) : (
         <IncidentMap
@@ -61,7 +50,7 @@ function MapContent() {
           center={center}
           highlightId={highlightId}
           onStatusChange={handleStatusChange}
-          className="h-[600px] w-full rounded-lg"
+          className="h-[600px] w-full rounded-xl"
         />
       )}
     </div>
@@ -71,10 +60,10 @@ function MapContent() {
 export default function DashboardMapPage() {
   return (
     <Suspense fallback={
-      <div className="container mx-auto px-4 py-6">
-        <h1 className="mb-4 text-2xl font-bold">Peta Insiden</h1>
-        <div className="flex h-[600px] items-center justify-center rounded-lg bg-muted">
-          <p className="text-sm text-muted-foreground">Memuat peta...</p>
+      <div className="px-4 py-6 lg:px-6">
+        <h1 className="mb-4 text-2xl font-bold text-white">Peta Insiden</h1>
+        <div className="flex h-[600px] items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/60">
+          <p className="text-sm text-zinc-500">Memuat peta...</p>
         </div>
       </div>
     }>

@@ -8,8 +8,6 @@ import IncidentTable from "@/components/dashboard/incident-table";
 import type { CategoryValue, StatusValue } from "@/lib/constants";
 import { CATEGORIES, STATUSES } from "@/lib/constants";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function DashboardPage() {
   const [filterCategory, setFilterCategory] = useState<CategoryValue | "all">("all");
@@ -38,19 +36,22 @@ export default function DashboardPage() {
   }, [incidents]);
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-6">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
+    <div className="px-4 py-6 lg:px-6 space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+        <p className="text-sm text-zinc-500 mt-1">Ringkasan insiden dan status terkini</p>
+      </div>
 
       <MetricCards {...stats} />
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Data Insiden</CardTitle>
-            <div className="flex flex-wrap gap-3 pt-2">
+      <div className="grid gap-6 xl:grid-cols-[1fr_300px]">
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800 px-5 py-4">
+            <h2 className="text-sm font-semibold text-white">Data Insiden</h2>
+            <div className="flex flex-wrap gap-2">
               <Select value={filterCategory} onValueChange={(v) => setFilterCategory(v as CategoryValue | "all")}>
-                <SelectTrigger className="w-[180px]"><SelectValue placeholder="Semua Kategori" /></SelectTrigger>
-                <SelectContent>
+                <SelectTrigger className="h-8 w-[160px] border-zinc-700 bg-zinc-800 text-xs text-zinc-300"><SelectValue placeholder="Semua Kategori" /></SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-700">
                   <SelectItem value="all">Semua Kategori</SelectItem>
                   {CATEGORIES.map((c) => (
                     <SelectItem key={c.value} value={c.value}>{c.emoji} {c.label}</SelectItem>
@@ -58,8 +59,8 @@ export default function DashboardPage() {
                 </SelectContent>
               </Select>
               <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as StatusValue | "all")}>
-                <SelectTrigger className="w-[160px]"><SelectValue placeholder="Semua Status" /></SelectTrigger>
-                <SelectContent>
+                <SelectTrigger className="h-8 w-[140px] border-zinc-700 bg-zinc-800 text-xs text-zinc-300"><SelectValue placeholder="Semua Status" /></SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-700">
                   <SelectItem value="all">Semua Status</SelectItem>
                   {STATUSES.map((s) => (
                     <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
@@ -67,15 +68,15 @@ export default function DashboardPage() {
                 </SelectContent>
               </Select>
             </div>
-          </CardHeader>
-          <CardContent>
+          </div>
+          <div className="p-5">
             {loading ? (
-              <div className="py-12 text-center text-muted-foreground">Memuat data...</div>
+              <div className="py-12 text-center text-zinc-500">Memuat data...</div>
             ) : (
               <IncidentTable incidents={incidents} onStatusChange={refetch} />
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         <CategoryChart data={categoryDist} />
       </div>
